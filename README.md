@@ -1,7 +1,8 @@
-# SpotLights
+# Spotlights
 
 ## Development
 1. Create an app on the [Spotify Developer's Dashboard](https://developer.spotify.com/)
+   - Be sure to specify a callback URL that matches the URL in the Express.js server and PORT in the env file e.g. http://localhost:4000/auth
 2. Create a file called .env in the root directory and add the following entries:
     ```
     SPOTIFY_CLIENT_ID=<your-app-client-id>

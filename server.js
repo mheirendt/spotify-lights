@@ -51,10 +51,8 @@ app.get('/login', function (req, res) {
         }));
 });
 
+// Authentication callback
 app.get('/auth', function (req, res) {
-
-    // your application requests refresh and access tokens
-    // after checking the state parameter
 
     const code = req.query.code || null;
     const state = req.query.state || null;
