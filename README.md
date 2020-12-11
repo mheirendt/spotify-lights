@@ -1,24 +1,18 @@
 # spotify
 
-## Project setup
-```
-npm install
-```
+## Development
+1. Create an app on the [Spotify Developer's Dashboard](https://developer.spotify.com/)
+2. Create a file called .env in the root directory and add the following entries:
+    ```
+    SPOTIFY_CLIENT_ID=<your-app-client-id>
+    SPOTIFY_CLIENT_SECRET=<your-app-client-secret>
+    ```
+3. Open the terminal and run the following commands:
+    ```bash
+    # Install the project's dependencies
+    npm i
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+    # Start the development web server
+    npm run serve
+    ```
+4. Navigate to http://localhost:8080
