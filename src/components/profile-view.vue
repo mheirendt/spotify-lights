@@ -1,38 +1,32 @@
 <template>
-  <div>
-    <template v-if="this.user">
-      <v-menu
-        v-model="showLibrary"
-        top
-        offset-y
-        :nudge-bottom="22.5"
-        origin="bottom right"
-        transition="scale-transition"
-        :close-on-content-click="false"
-        :max-height="500"
-      >
-        <template #activator="{ on }">
-          <v-btn v-on="on" fab dark fixed bottom right :offset-top="100"
-            ><v-icon>mdi-music</v-icon></v-btn
-          >
-        </template>
-        <v-card>
-          <user-tracks
-            v-if="tracks"
-            :loading="loading"
-            :count="tracks.data.total"
-            @page="updateTracks($event)"
-            @select="trackSelected($event)"
-            :tracks="tracks.data.items"
-          />
-        </v-card>
-      </v-menu>
-      <device-playback ref="playback" />
-    </template>
-    <template v-else>
-      <h1>Log in to Spotify using Authorization Code flow</h1>
-      <a :href="`${url}`" class="btn btn-primary">Log in with Spotify</a><br />
-    </template>
+  <div v-if="this.user">
+    <v-menu
+      v-model="showLibrary"
+      top
+      offset-y
+      :nudge-bottom="22.5"
+      origin="bottom right"
+      transition="scale-transition"
+      :close-on-content-click="false"
+      :max-height="500"
+    >
+      <template #activator="{ on }">
+        <v-btn v-on="on" fab dark fixed bottom right :offset-top="100"
+          ><v-icon>mdi-music</v-icon></v-btn
+        >
+      </template>
+      <v-card>
+        <user-tracks
+          v-if="tracks"
+          :loading="loading"
+          :count="tracks.data.total"
+          @page="updateTracks($event)"
+          @select="trackSelected($event)"
+          :tracks="tracks.data.items"
+        />
+      </v-card>
+    </v-menu>
+    <device-playback ref="playback" />
   </div>
 </template>
 
@@ -43,7 +37,6 @@ import DevicePlayback from "./device-playback";
 export default {
   components: { UserTracks, DevicePlayback },
   data: () => ({
-    url: `/api/login`,
     tracks: undefined,
     loading: true,
     showLibrary: false,
@@ -56,7 +49,7 @@ export default {
   methods: {
     logOut() {
       this.$store.commit("mutateUser", null);
-      this.$router.push({ name: "Home" });
+      this.$router.push({ name: "Login" });
     },
     async updateTracks(pagination) {
       let query;
@@ -69,9 +62,6 @@ export default {
       }
       this.tracks = await axios.get(`https://api.spotify.com/v1/me/tracks`, {
         params: query,
-        headers: {
-          Authorization: "Bearer " + this.$route.query.access_token,
-        },
       });
       this.loading = false;
     },
@@ -80,15 +70,16 @@ export default {
       this.showLibrary = false;
     },
   },
-  async created() {
+  async mounted() {
     if (this.$route.query) {
-      const response = await axios.get(`https://api.spotify.com/v1/me`, {
-        headers: {
-          Authorization: "Bearer " + this.$route.query.access_token,
-        },
-      });
-      await this.updateTracks();
-      this.$store.commit("mutateUser", response.data);
+      try {
+        const response = await axios.get(`https://api.spotify.com/v1/me`);
+        await this.updateTracks();
+        this.$store.commit("mutateUser", response.data);
+      } catch (e) {
+        console.warn(e);
+        this.$router.push({ name: "Login" });
+      }
     }
   },
 };

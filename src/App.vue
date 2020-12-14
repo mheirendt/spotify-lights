@@ -15,28 +15,23 @@
       <v-spacer></v-spacer>
 
       <v-btn icon>
-        <v-icon>mdi-cast</v-icon>
+        <v-icon>mdi-profile</v-icon>
       </v-btn>
     </v-app-bar>
 
     <v-main>
-      <profile-view />
+      <router-view />
     </v-main>
   </v-app>
 </template>
 
 <script>
-import ProfileView from "./components/profile-view";
-
 export default {
   name: "App",
-
-  components: {
-    ProfileView,
+  computed: {
+    user() {
+      return this.$store.getters.getUser;
+    },
   },
-
-  data: () => ({
-    //
-  }),
 };
 </script>
