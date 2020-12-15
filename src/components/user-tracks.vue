@@ -1,7 +1,13 @@
 <template>
-  <div class="user-tracks">
+  <infinite-scroll
+    class="user-tracks"
+    :items="tracks"
+    :total="count"
+    #default="{ items }"
+    v-on="$listeners"
+  >
     <v-sheet
-      v-for="(item, idx) of tracks"
+      v-for="(item, idx) of items"
       :key="item.added"
       dark
       :color="idx % 2 === 0 ? 'accent' : 'secondary'"
@@ -19,14 +25,7 @@
         <div>{{ item.track.artists.map((a) => a.name).join(", ") }}</div>
       </div>
     </v-sheet>
-    <div class="d-flex loading" v-if="tracks.length < count">
-      <div class="mx-auto pt-2">
-        <v-icon class="icon" v-intersect="loadMore" :size="38"
-          >mdi-loading</v-icon
-        >
-      </div>
-    </div>
-  </div>
+  </infinite-scroll>
 </template>
 
 <style lang="scss">
@@ -37,13 +36,6 @@
   .flex-vertical {
     display: flex;
     flex-direction: column;
-  }
-  .loading {
-    overflow: overlay;
-    height: 50px;
-    .icon {
-      animation: rotation 1s infinite linear;
-    }
   }
 
   @keyframes rotation {
@@ -58,8 +50,10 @@
 </style>
 <script>
 import { debounce } from "lodash";
+import InfiniteScroll from "./layout/infinite-scroll";
 
 export default {
+  components: { InfiniteScroll },
   props: {
     loading: Boolean,
     tracks: Array,
