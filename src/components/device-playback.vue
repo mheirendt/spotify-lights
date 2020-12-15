@@ -14,17 +14,23 @@
 
 <script>
 import axios from "axios";
+import Mutations from "../store/mutations";
+import Getters from "../store/getters";
 export default {
   data: () => ({
     devices: undefined,
-    playback: undefined,
     loading: false,
+    unsubscribe: undefined,
+    analysis: undefined,
   }),
   computed: {
     device() {
       return (
         (this.devices && this.devices.length && this.devices[0].id) || undefined
       );
+    },
+    playback() {
+      return this.$store.getters[Getters.PLAYBACK];
     },
     playing() {
       return this.playback && this.playback.is_playing;
@@ -36,20 +42,31 @@ export default {
         .join(", ")}`;
     },
   },
+  watch: {
+    async playback(playback, old) {
+      if (!playback.item || (old && playback.item.uri === old.item.uri)) return;
+      this.analysis = await axios.get(
+        `https://api.spotify.com/v1/audio-analysis/${playback.item.id}`
+      );
+    },
+  },
   async created() {
     this.devices = (
       await axios.get(`https://api.spotify.com/v1/me/player/devices`)
     ).data.devices;
     if (!this.devices.length) {
-      console.error("You must begin a session on a device");
+      alert("You must begin a session on a device");
     }
     await this.updatePlayback();
-    setInterval(
+    this.subscription = setInterval(
       async function () {
         await this.updatePlayback();
       }.bind(this),
-      3000
+      10000
     );
+  },
+  beforeDestroy() {
+    clearInterval(this.subscription);
   },
   methods: {
     async pause() {
@@ -73,7 +90,7 @@ export default {
           }
         );
         await new Promise((resolve) => {
-          setTimeout(() => resolve(), 125);
+          setTimeout(() => resolve(), 200);
         });
         await this.updatePlayback();
       } catch (e) {
@@ -83,9 +100,15 @@ export default {
       }
     },
     async updatePlayback() {
-      this.playback = (
-        await axios.get("https://api.spotify.com/v1/me/player")
-      ).data;
+      const response = await axios.get("https://api.spotify.com/v1/me/player");
+      if (
+        this.playback &&
+        response.data.is_playing === this.playback.is_playing &&
+        response.data.item.id === this.playback.item.id
+      )
+        return;
+
+      this.$store.commit(Mutations.PLAYBACK, response.data);
     },
   },
 };

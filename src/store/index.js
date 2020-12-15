@@ -1,28 +1,30 @@
 import ProfileView from "../components/profile-view";
-import Vuex from 'vuex';
-import Vue from 'vue';
+import Vuex from "vuex";
+import Vue from "vue";
+import Mutations from "./mutations";
+import Getters from "./getters";
 
 Vue.use(Vuex);
 
 export default new Vuex.Store({
   state: {
     user: null,
-    playing: null,
+    playback: null,
   },
   mutations: {
-    mutateUser(state, payload) {
+    [Mutations.USER](state, payload) {
       state.user = payload;
     },
-    mutatePlaying(state, payload) {
-      state.playing = payload;
+    [Mutations.PLAYBACK](state, payload) {
+      state.playback = payload;
     }
   },
   getters: {
-    getUser(state) {
+    [Getters.USER](state) {
       return state.user;
     },
-    getPlaying(state) {
-      return state.playing;
+    [Getters.PLAYBACK](state) {
+      return state.playback;
     }
   },
   modules: {

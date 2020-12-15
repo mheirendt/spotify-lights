@@ -11,8 +11,7 @@ axios.interceptors.request.use(req => {
 axios.interceptors.response.use(
     res => res,
     err => {
-        console.log(err);
-        if (err.response.status === 401) {
+        if (err.response && err.response.status === 401) {
             Router.push({ name: 'Login' });
         } else {
             throw err;

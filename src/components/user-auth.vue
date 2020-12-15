@@ -1,7 +1,9 @@
 <template>
   <div class="user-auth">
-    <h1>Log in to Spotify using Authorization Code flow</h1>
-    <a :href="`${url}`" class="btn btn-primary">Log in with Spotify</a><br />
+    <h1>Login</h1>
+    <v-btn :href="url">
+      <v-icon>mdi-spotify</v-icon><span>&nbsp;With Spotify</span>
+    </v-btn>
   </div>
 </template>
 
