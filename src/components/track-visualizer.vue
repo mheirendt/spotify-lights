@@ -1,8 +1,14 @@
 <template>
   <div class="track-visualizer" v-if="track">
-    {{ progress }}
-    {{ percent }}
-    <v-progress-linear :value="percent" />
+    <div class="d-flex align-center justify-center">
+      <div class="pa-2">{{ time.elapsed }}</div>
+      <v-progress-linear
+        style="max-width: 500px"
+        color="secondary"
+        :value="time.percent"
+      />
+      <div class="pa-2">{{ time.length }}</div>
+    </div>
   </div>
 </template>
 
@@ -18,7 +24,7 @@ export default {
       function () {
         this.now = new Date();
       }.bind(this),
-      1000
+      250
     );
   },
   beforeDestroy() {
@@ -29,13 +35,41 @@ export default {
       return this.$store.getters[Getters.TRACK];
     },
     progress() {
-      return this.now - this.track.started;
+      return this.track.paused || this.track.progress === this.track.duration
+        ? this.track.progress
+        : this.now - new Date(this.track.timestamp - this.track.progress);
     },
-    percent() {
-      return Math.min(
+    time() {
+      const elapsed =
+        this.progress > this.track.duration
+          ? this.lengthMin
+          : this.msToMin(this.progress);
+      const remaining =
+        this.progress > this.track.duration
+          ? "0:00"
+          : this.msToMin(this.track.duration - this.progress);
+      const length = this.msToMin(this.track.duration);
+      const percent = Math.min(
         Math.round((this.progress / this.track.duration) * 100),
         100
       );
+      return {
+        elapsed,
+        remaining,
+        length,
+        percent,
+      };
+    },
+  },
+  methods: {
+    msToMin(ms) {
+      const seconds = ms / 1000;
+      return `${Math.floor(seconds / 60)}:${Math.floor(
+        seconds % 60
+      ).toLocaleString("en-US", {
+        minimumIntegerDigits: 2,
+        useGrouping: false,
+      })}`;
     },
   },
 };

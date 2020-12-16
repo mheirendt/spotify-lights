@@ -83,7 +83,7 @@ export default {
           }
         );
         await new Promise((resolve) => {
-          setTimeout(() => resolve(), 200);
+          setTimeout(() => resolve(), 300);
         });
         await this.updatePlayback();
       } catch (e) {
@@ -94,27 +94,21 @@ export default {
     },
     async updatePlayback() {
       const response = await axios.get("https://api.spotify.com/v1/me/player");
-      if (
-        !response.data.item ||
-        (this.track &&
-          response.data.item.uri === this.track.id &&
-          this.track &&
-          !response.data.is_playing === this.track.paused)
-      )
-        return;
+      let analysis;
+      if (response.data.item?.uri !== this.track?.id) {
+        const analysisResponse = await axios.get(
+          `https://api.spotify.com/v1/audio-analysis/${response.data.item.id}`
+        );
+        analysis = analysisResponse.data;
+      } else {
+        analysis = this.track?.analysis;
+      }
 
-      const analysis = await axios.get(
-        `https://api.spotify.com/v1/audio-analysis/${response.data.item.id}`
-      );
-
-      const started = new Date(
-        response.data.timestamp - response.data.progress_ms
-      );
-      console.log(response.data.is_playing, response.data);
       this.$store.commit(Mutations.TRACK, {
         id: response.data.item.uri,
-        analysis: analysis.data, // TODO: change analysis to a standard format
-        started,
+        analysis,
+        progress: response.data.progress_ms,
+        timestamp: new Date().getTime(), //response.data.timestamp, // why spotify not update this each request??
         duration: response.data.item.duration_ms,
         paused: !response.data.is_playing,
         name: response.data.item.name,
