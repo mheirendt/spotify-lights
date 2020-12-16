@@ -1,13 +1,13 @@
 <template>
   <div class="track-visualizer" v-if="track">
     <div class="d-flex align-center justify-center">
-      <div class="pa-2">{{ time.elapsed }}</div>
+      <div class="pa-2">{{ time.elapsed | minutes }}</div>
       <v-progress-linear
         style="max-width: 500px"
         color="secondary"
         :value="time.percent"
       />
-      <div class="pa-2">{{ time.length }}</div>
+      <div class="pa-2">{{ time.length | minutes }}</div>
     </div>
   </div>
 </template>
@@ -41,14 +41,12 @@ export default {
     },
     time() {
       const elapsed =
-        this.progress > this.track.duration
-          ? this.lengthMin
-          : this.msToMin(this.progress);
+        this.progress > this.track.duration ? this.lengthMin : this.progress;
       const remaining =
         this.progress > this.track.duration
-          ? "0:00"
-          : this.msToMin(this.track.duration - this.progress);
-      const length = this.msToMin(this.track.duration);
+          ? 0
+          : this.track.duration - this.progress;
+      const length = this.track.duration;
       const percent = Math.min(
         Math.round((this.progress / this.track.duration) * 100),
         100
@@ -59,17 +57,6 @@ export default {
         length,
         percent,
       };
-    },
-  },
-  methods: {
-    msToMin(ms) {
-      const seconds = ms / 1000;
-      return `${Math.floor(seconds / 60)}:${Math.floor(
-        seconds % 60
-      ).toLocaleString("en-US", {
-        minimumIntegerDigits: 2,
-        useGrouping: false,
-      })}`;
     },
   },
 };
