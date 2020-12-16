@@ -3,11 +3,10 @@
     class="user-tracks"
     :items="tracks"
     :total="count"
-    #default="{ items }"
     v-on="$listeners"
   >
     <v-sheet
-      v-for="(item, idx) of items"
+      v-for="(item, idx) of tracks"
       :key="item.added"
       dark
       :color="idx % 2 === 0 ? 'accent' : 'secondary'"

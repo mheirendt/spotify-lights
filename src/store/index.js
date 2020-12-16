@@ -6,27 +6,28 @@ import Getters from "./getters";
 
 Vue.use(Vuex);
 
+const mutations = {};
+Object.values(Mutations).forEach(mutation => {
+  mutations[mutation] = function (state, payload) {
+    state[mutation] = payload;
+  };
+});
+
+const getters = {};
+Object.values(Getters).forEach(getter => {
+  getters[getter] = function (state) {
+    return state[getter];
+  };
+});
+
 export default new Vuex.Store({
   state: {
-    user: null,
-    playback: null,
+    [Mutations.USER]: null,
+    [Mutations.TRACK]: null,
+    [Mutations.PROGRESS]: null
   },
-  mutations: {
-    [Mutations.USER](state, payload) {
-      state.user = payload;
-    },
-    [Mutations.PLAYBACK](state, payload) {
-      state.playback = payload;
-    }
-  },
-  getters: {
-    [Getters.USER](state) {
-      return state.user;
-    },
-    [Getters.PLAYBACK](state) {
-      return state.playback;
-    }
-  },
+  mutations,
+  getters,
   modules: {
     ProfileView
   },

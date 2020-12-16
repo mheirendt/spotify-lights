@@ -1,7 +1,7 @@
 <template>
   <v-footer color="primary" dark absolute bottom>
     <v-btn
-      v-if="playback"
+      v-if="track"
       icon
       @click="playing ? pause() : play()"
       :loading="loading"
@@ -20,8 +20,7 @@ export default {
   data: () => ({
     devices: undefined,
     loading: false,
-    unsubscribe: undefined,
-    analysis: undefined,
+    subscriptions: [],
   }),
   computed: {
     device() {
@@ -29,25 +28,15 @@ export default {
         (this.devices && this.devices.length && this.devices[0].id) || undefined
       );
     },
-    playback() {
-      return this.$store.getters[Getters.PLAYBACK];
+    track() {
+      return this.$store.getters[Getters.TRACK];
     },
     playing() {
-      return this.playback && this.playback.is_playing;
+      return this.track && !this.track.paused;
     },
     currentlyPlaying() {
-      if (!this.playback) return;
-      return `${this.playback.item.name} - ${this.playback.item.artists
-        .map((a) => a.name)
-        .join(", ")}`;
-    },
-  },
-  watch: {
-    async playback(playback, old) {
-      if (!playback.item || (old && playback.item.uri === old.item.uri)) return;
-      this.analysis = await axios.get(
-        `https://api.spotify.com/v1/audio-analysis/${playback.item.id}`
-      );
+      if (!this.track) return;
+      return `${this.track.name} - ${this.track.artist}`;
     },
   },
   async created() {
@@ -57,16 +46,20 @@ export default {
     if (!this.devices.length) {
       alert("You must begin a session on a device");
     }
+
     await this.updatePlayback();
-    this.subscription = setInterval(
-      async function () {
-        await this.updatePlayback();
-      }.bind(this),
-      10000
+
+    this.subscriptions.push(
+      setInterval(
+        async function () {
+          await this.updatePlayback();
+        }.bind(this),
+        10000
+      )
     );
   },
   beforeDestroy() {
-    clearInterval(this.subscription);
+    this.subscriptions.forEach((subscription) => clearInterval(subscription));
   },
   methods: {
     async pause() {
@@ -102,13 +95,32 @@ export default {
     async updatePlayback() {
       const response = await axios.get("https://api.spotify.com/v1/me/player");
       if (
-        this.playback &&
-        response.data.is_playing === this.playback.is_playing &&
-        response.data.item.id === this.playback.item.id
+        !response.data.item ||
+        (this.track &&
+          response.data.item.uri === this.track.id &&
+          this.track &&
+          !response.data.is_playing === this.track.paused)
       )
         return;
 
-      this.$store.commit(Mutations.PLAYBACK, response.data);
+      const analysis = await axios.get(
+        `https://api.spotify.com/v1/audio-analysis/${response.data.item.id}`
+      );
+
+      const started = new Date(
+        response.data.timestamp - response.data.progress_ms
+      );
+      console.log(response.data.is_playing, response.data);
+      this.$store.commit(Mutations.TRACK, {
+        id: response.data.item.uri,
+        analysis: analysis.data, // TODO: change analysis to a standard format
+        started,
+        duration: response.data.item.duration_ms,
+        paused: !response.data.is_playing,
+        name: response.data.item.name,
+        artist: response.data.item.artists.map((m) => m.name).join(", "),
+        album: response.data.item.album.name,
+      });
     },
   },
 };

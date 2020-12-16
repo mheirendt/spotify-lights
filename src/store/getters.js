@@ -1,4 +1,5 @@
 export default {
-    PLAYBACK: "getters:playback",
-    USER: "getters:user"
+    TRACK: "track",
+    PROGRESS: "progress",
+    USER: "user"
 };

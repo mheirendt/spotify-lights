@@ -1,6 +1,6 @@
 <template>
   <div class="infinite-scroll">
-    <slot :items="items" />
+    <slot />
     <div class="d-flex loading" v-if="items.length < total">
       <div class="mx-auto pt-2">
         <v-icon class="icon" color="primary" v-intersect="loadMore">{{

@@ -26,6 +26,7 @@
         </v-card>
       </v-menu>
     </v-app-bar>
+    <track-visualizer />
     <v-menu
       v-model="showLibrary"
       top
@@ -61,8 +62,9 @@ import UserTracks from "./user-tracks";
 import Mutations from "../store/mutations";
 import Getters from "../store/getters";
 import DevicePlayback from "./device-playback";
+import TrackVisualizer from "./track-visualizer.vue";
 export default {
-  components: { UserTracks, DevicePlayback },
+  components: { UserTracks, DevicePlayback, TrackVisualizer },
   data: () => ({
     tracks: [],
     totalTracks: 0,
@@ -70,9 +72,6 @@ export default {
     showLibrary: false,
   }),
   computed: {
-    playback() {
-      return this.$store.getters[Getters.PLAYBACK];
-    },
     user() {
       return this.$store.getters[Getters.USER];
     },
