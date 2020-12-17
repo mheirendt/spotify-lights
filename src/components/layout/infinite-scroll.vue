@@ -1,25 +1,18 @@
 <template>
   <div class="infinite-scroll">
     <slot />
-    <div class="d-flex loading" v-if="items.length < total">
+    <v-sheet class="d-flex loading" v-if="items.length < total" color="white">
       <div class="mx-auto pt-2">
         <v-icon class="icon" color="primary" v-intersect="loadMore">{{
           loadingIcon
         }}</v-icon>
       </div>
-    </div>
+    </v-sheet>
   </div>
 </template>
 
 <style lang="scss">
 .infinite-scroll {
-  .track {
-    cursor: pointer;
-  }
-  .flex-vertical {
-    display: flex;
-    flex-direction: column;
-  }
   .loading {
     overflow: overlay;
     height: 50px;

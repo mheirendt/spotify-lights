@@ -5,6 +5,7 @@ const request = require('request');
 const cors = require('cors');
 const querystring = require('querystring');
 const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 
 const client_id = process.env.SPOTIFY_CLIENT_ID;
 const client_secret = process.env.SPOTIFY_CLIENT_SECRET;
@@ -35,7 +36,8 @@ const app = express();
 
 app.use(express.static(__dirname + '/public'))
     .use(cors())
-    .use(cookieParser());
+    .use(cookieParser())
+    .use(bodyParser.json());
 
 app.get('/login', function (req, res) {
     const state = generateRandomString(16);
