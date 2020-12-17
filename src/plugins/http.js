@@ -10,9 +10,19 @@ axios.interceptors.request.use(req => {
 
 axios.interceptors.response.use(
     res => res,
-    err => {
+    async err => {
         if (err.response && err.response.status === 401) {
-            Router.push({ name: 'Login' });
+            if (Router.app._route.query.refresh_token) {
+                const response = await axios.post('/api/token/refresh', {
+                    refresh_token: Router.app._route.query.refresh_token
+                });
+                Router.push({
+                    query:
+                        response.data
+                });
+            } else {
+                Router.push({ name: 'Login' });
+            }
         } else {
             throw err;
         }
