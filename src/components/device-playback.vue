@@ -93,7 +93,21 @@ export default {
       }
     },
     async updatePlayback() {
+      const requestedAt = new Date();
       const response = await axios.get("https://api.spotify.com/v1/me/player");
+
+      // issue: https://github.com/spotify/web-api/issues/1073
+      // Best approximation is to get the time that the request took and divide it by 2
+      // before subtracting it from the current time for the timestamp
+      const requestComplete = new Date(),
+        timespan = requestComplete - requestedAt;
+      let timestamp = new Date(requestComplete - timespan / 2);
+
+      // If the difference between the timestamp & the current time is less than a second, it is probably accurate
+      if (Math.abs(timestamp - response.data.timestamp) < 1000) {
+        timestamp = response.data.timestamp;
+      }
+
       let analysis;
       if (response.data.item?.uri !== this.track?.id) {
         const analysisResponse = await axios.get(
@@ -108,7 +122,7 @@ export default {
         id: response.data.item.uri,
         analysis,
         progress: response.data.progress_ms,
-        timestamp: new Date().getTime(), //response.data.timestamp, // why spotify not update this each request??
+        timestamp,
         duration: response.data.item.duration_ms,
         paused: !response.data.is_playing,
         name: response.data.item.name,

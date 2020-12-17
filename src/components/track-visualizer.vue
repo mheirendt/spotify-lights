@@ -1,13 +1,13 @@
 <template>
   <div class="track-visualizer" v-if="track">
     <div class="d-flex align-center justify-center">
-      <div class="pa-2">{{ time.elapsed | minutes }}</div>
+      <div class="pa-2">{{ time.progress | minutes }}</div>
       <v-progress-linear
         style="max-width: 500px"
         color="secondary"
         :value="time.percent"
       />
-      <div class="pa-2">{{ time.length | minutes }}</div>
+      <div class="pa-2">{{ time.duration | minutes }}</div>
     </div>
   </div>
 </template>
@@ -34,28 +34,22 @@ export default {
     track() {
       return this.$store.getters[Getters.TRACK];
     },
-    progress() {
-      return this.track.paused || this.track.progress === this.track.duration
-        ? this.track.progress
-        : this.now - new Date(this.track.timestamp - this.track.progress);
-    },
     time() {
-      const elapsed =
-        this.progress > this.track.duration ? this.lengthMin : this.progress;
-      const remaining =
-        this.progress > this.track.duration
-          ? 0
-          : this.track.duration - this.progress;
-      const length = this.track.duration;
-      const percent = Math.min(
-        Math.round((this.progress / this.track.duration) * 100),
-        100
-      );
+      // Destructure the info we need from the track
+      let { duration, timestamp, progress, paused } = this.track;
+
+      // The api is polled every XX seconds, so we need to offset the
+      // progress with the timestamp of when the data was requrested
+      if (!paused && progress <= duration) {
+        progress = this.now - new Date(timestamp - progress);
+      }
+      const remaining = duration - progress;
+      const percent = Math.min(Math.round((progress / duration) * 100), 100);
       return {
-        elapsed,
+        progress,
         remaining,
-        length,
         percent,
+        duration,
       };
     },
   },
