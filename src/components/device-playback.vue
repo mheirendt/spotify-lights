@@ -1,6 +1,10 @@
 <template>
-  <v-footer color="primary" dark absolute bottom v-if="track && track.name">
-    <div class="d-flex align-self-center" style="min-width: 200px">
+  <v-footer color="primary" dark absolute bottom v-if="track">
+    <div
+      class="d-flex align-self-center"
+      style="min-width: 200px"
+      v-if="track.name"
+    >
       <v-img
         :src="track.images[2].url"
         contain
@@ -46,6 +50,7 @@
         </v-btn>
       </div>
       <track-slider
+        v-if="track.duration"
         :progress="progress"
         :duration="track.duration"
         :on-seek="seek"
@@ -122,55 +127,78 @@ export default {
   methods: {
     async toggleShuffle() {
       this.loading = true;
-      await this.service.shuffle(!this.track.shuffle);
-      await this.updatePlayback();
+      const shuffled = await this.service.shuffle(!this.track.shuffle);
+      if (shuffled) await this.updatePlayback();
+      else {
+        console.log("nope");
+      }
       this.loading = false;
     },
     async previous() {
       this.loading = true;
+      let method;
       if (this.progress > 15000) {
-        await this.service.seek(0);
+        method = async () => await this.service.seek(0);
       } else {
-        await this.service.previous();
+        method = async () => await this.service.previous();
       }
-      await this.updatePlayback();
+      const previous = await method();
+      if (previous) await this.updatePlayback();
+      else {
+        console.log("nope");
+      }
 
       this.loading = false;
     },
     async pause() {
       this.loading = true;
-      await this.service.pause();
-      await this.updatePlayback();
+      const paused = await this.service.pause();
+      if (paused) await this.updatePlayback();
+      else {
+        console.log("nope");
+      }
       this.loading = false;
     },
     async play() {
       this.loading = true;
-      await this.service.play();
-
-      // Play to device is asynchronous
-      // Wait for a little and hopefully things are in sync
-      await new Promise((resolve) => {
-        setTimeout(() => resolve(), 300);
-      });
-      await this.updatePlayback();
+      const played = await this.service.play();
+      if (played) {
+        // Play to device is asynchronous
+        // Wait for a little and hopefully things are in sync
+        await new Promise((resolve) => {
+          setTimeout(() => resolve(), 300);
+        });
+        await this.updatePlayback();
+      } else {
+        console.log("nope");
+      }
       this.loading = false;
     },
     async next() {
       this.loading = true;
-      await this.service.next();
-      await this.updatePlayback();
+      const skipped = await this.service.next();
+      if (skipped) await this.updatePlayback();
+      else {
+        console.log("nope");
+      }
       this.loading = false;
     },
     async seek(progress) {
       this.loading = true;
-      await this.service.seek(progress);
-      await this.updatePlayback();
+      const seeked = await this.service.seek(progress);
+      if (seeked) await this.updatePlayback();
+      else {
+        console.log("nope");
+      }
       this.loading = false;
     },
     async toggleRepeat() {
       this.loading = true;
-      await this.service.repeat(!this.track.repeat);
-      await this.updatePlayback();
+      const repeated = await this.service.repeat(!this.track.repeat);
+      if (repeated) await this.updatePlayback();
+      else {
+        console.log("nope");
+      }
       this.loading = false;
     },
     updateProgress() {

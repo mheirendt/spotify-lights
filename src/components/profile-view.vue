@@ -1,7 +1,12 @@
 <template>
-  <div v-if="this.user">
-    <v-app-bar app color="secondary" dark>
-      <div class="d-flex align-center">
+  <div v-if="this.user" class="profile-view">
+    <v-hover v-slot="{ hover }" :disabled="pinned" :close-delay="500">
+      <v-app-bar
+        app
+        color="primary"
+        dark
+        :extension-height="pinned || hover ? undefined : 0"
+      >
         <v-img
           alt="Spotify"
           class="shrink mt-1"
@@ -10,23 +15,36 @@
           src="../assets/Spotify_Logo_CMYK_White.png"
           width="100"
         />
-      </div>
 
-      <v-spacer></v-spacer>
-      <v-menu offset-y>
-        <template #activator="{ on }">
-          <v-btn v-on="on" icon>
-            <v-icon color="white" :size="38">mdi-account-circle</v-icon>
-          </v-btn>
+        <v-spacer></v-spacer>
+        <v-menu offset-y>
+          <template #activator="{ on }">
+            <v-btn v-on="on" icon>
+              <v-icon :size="38">mdi-account-circle</v-icon>
+            </v-btn>
+          </template>
+          <v-card>
+            <v-list>
+              <v-list-item to="/login">Logout</v-list-item>
+            </v-list>
+          </v-card>
+        </v-menu>
+        <template #extension>
+          <v-tabs>
+            <v-spacer />
+            <v-tab link to="visualize">Visualize</v-tab>
+            <v-tab link to="setup">Setup</v-tab>
+            <v-spacer />
+            <v-btn bottom left icon @click="pinned = !pinned" class="mr-1">
+              <v-icon>{{
+                pinned ? "mdi-pin-outline" : "mdi-pin-off-outline"
+              }}</v-icon>
+            </v-btn>
+          </v-tabs>
         </template>
-        <v-card>
-          <v-list>
-            <v-list-item to="/login">Logout</v-list-item>
-          </v-list>
-        </v-card>
-      </v-menu>
-    </v-app-bar>
-    <track-visualizer />
+      </v-app-bar>
+    </v-hover>
+    <router-view />
     <v-menu
       v-model="showLibrary"
       top
@@ -56,20 +74,29 @@
   </div>
 </template>
 
+<style lang="scss">
+.profile-view {
+  .v-toolbar__extension,
+  .v-toolbar--extended {
+    transition: height 0.15s ease-out;
+  }
+}
+</style>
+
 <script>
 import axios from "axios";
 import UserTracks from "./user-tracks";
 import Mutations from "../store/mutations";
 import Getters from "../store/getters";
 import DevicePlayback from "./device-playback";
-import TrackVisualizer from "./track-visualizer.vue";
 export default {
-  components: { UserTracks, DevicePlayback, TrackVisualizer },
+  components: { UserTracks, DevicePlayback },
   data: () => ({
     tracks: [],
     totalTracks: 0,
     loading: true,
     showLibrary: false,
+    pinned: true,
   }),
   computed: {
     user() {
@@ -101,14 +128,9 @@ export default {
   },
   async mounted() {
     if (this.$route.query) {
-      try {
-        const response = await axios.get(`https://api.spotify.com/v1/me`);
-        await this.updateTracks();
-        this.$store.commit(Mutations.USER, response.data);
-      } catch (e) {
-        console.warn(e);
-        this.$router.push({ name: "Login" });
-      }
+      const response = await axios.get(`https://api.spotify.com/v1/me`);
+      await this.updateTracks();
+      this.$store.commit(Mutations.USER, response.data);
     }
   },
 };
