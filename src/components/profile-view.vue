@@ -1,10 +1,10 @@
 <template>
   <div v-if="this.user">
-    <v-app-bar app color="primary" dark>
+    <v-app-bar app color="secondary" dark>
       <div class="d-flex align-center">
         <v-img
           alt="Spotify"
-          class="shrink mt-1 hidden-sm-and-down"
+          class="shrink mt-1"
           contain
           min-width="100"
           src="../assets/Spotify_Logo_CMYK_White.png"

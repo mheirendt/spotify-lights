@@ -1,11 +1,13 @@
 <template>
   <v-slider
     v-bind="$attrs"
+    dense
     :max="duration"
     :min="0"
     :value="value"
     @start="sliding = true"
     @end="seek($event)"
+    @input="!sliding ? seek($event) : undefined"
   >
     <template #prepend>
       <div>{{ progress | minutes }}</div>
@@ -46,6 +48,7 @@ export default {
   },
   methods: {
     async seek(progress) {
+      this.sliding = true;
       await this.onSeek(progress);
       this.value = progress;
       this.sliding = false;

@@ -1,5 +1,5 @@
 <template>
-  <v-footer color="primary" dark absolute bottom v-if="track.name">
+  <v-footer color="primary" dark absolute bottom v-if="track && track.name">
     <div class="d-flex align-self-center" style="min-width: 200px">
       <v-img
         :src="track.images[2].url"
@@ -15,18 +15,37 @@
     <v-spacer style="max-width: 100px" />
     <div class="d-flex flex-grow-1 flex-column">
       <div class="d-flex justify-center">
-        <v-btn icon @click="previous()" :disabled="loading">
-          <v-icon>mdi-undo</v-icon>
+        <v-btn
+          icon
+          @click="toggleShuffle()"
+          :color="track.shuffle ? 'accent' : undefined"
+          :disabled="loading"
+        >
+          <v-icon>mdi-shuffle-variant</v-icon>
         </v-btn>
-        <v-btn icon @click="playing ? pause() : play()" :disabled="loading">
-          <v-icon>{{ playing ? "mdi-pause" : "mdi-play" }}</v-icon>
-        </v-btn>
-        <v-btn icon @click="next()" :disabled="loading">
-          <v-icon>mdi-redo</v-icon>
+        <div class="mx-6">
+          <v-btn icon @click="previous()" :disabled="loading">
+            <v-icon>mdi-undo</v-icon>
+          </v-btn>
+          <v-btn icon @click="playing ? pause() : play()" :disabled="loading">
+            <v-icon :size="42">{{
+              playing ? "mdi-pause-circle-outline" : "mdi-play-circle-outline"
+            }}</v-icon>
+          </v-btn>
+          <v-btn icon @click="next()" :disabled="loading">
+            <v-icon>mdi-redo</v-icon>
+          </v-btn>
+        </div>
+        <v-btn
+          icon
+          @click="toggleRepeat()"
+          :disabled="loading"
+          :color="track.repeat ? 'accent' : undefined"
+        >
+          <v-icon>mdi-repeat</v-icon>
         </v-btn>
       </div>
       <track-slider
-        v-if="progress"
         :progress="progress"
         :duration="track.duration"
         :on-seek="seek"
@@ -42,6 +61,7 @@ import axios from "axios";
 import Mutations from "../store/mutations";
 import Getters from "../store/getters";
 import trackSlider from "./track-slider.vue";
+import SpotifyService from "../services/spotify";
 export default {
   components: { trackSlider },
   data: () => ({
@@ -50,6 +70,7 @@ export default {
     subscriptions: [],
     now: new Date(),
     latency: 0,
+    service: SpotifyService,
   }),
   computed: {
     device() {
@@ -61,7 +82,7 @@ export default {
       return this.$store.getters[Getters.TRACK];
     },
     progress() {
-      return this.$store.getters[Getters.PROGRESS];
+      return this.$store.getters[Getters.PROGRESS] || 0;
     },
     playing() {
       return this.track && !this.track.paused;
@@ -99,57 +120,56 @@ export default {
     this.subscriptions.forEach((subscription) => clearInterval(subscription));
   },
   methods: {
-    async previous() {
+    async toggleShuffle() {
       this.loading = true;
-      await axios.post("https://api.spotify.com/v1/me/player/previous");
+      await this.service.shuffle(!this.track.shuffle);
       await this.updatePlayback();
       this.loading = false;
     },
-    async pause() {
-      await axios.put(
-        `https://api.spotify.com/v1/me/player/pause`,
-        {},
-        {
-          params: { device_id: this.device },
-        }
-      );
-      await this.updatePlayback();
-    },
-    async play(options) {
+    async previous() {
       this.loading = true;
-      try {
-        await axios.put(
-          "https://api.spotify.com/v1/me/player/play",
-          options || {},
-          {
-            params: { device_id: this.device },
-          }
-        );
-        await new Promise((resolve) => {
-          setTimeout(() => resolve(), 300);
-        });
-        await this.updatePlayback();
-      } catch (e) {
-        console.error(e);
-      } finally {
-        this.loading = false;
+      if (this.progress > 15000) {
+        await this.service.seek(0);
+      } else {
+        await this.service.previous();
       }
+      await this.updatePlayback();
+
+      this.loading = false;
+    },
+    async pause() {
+      this.loading = true;
+      await this.service.pause();
+      await this.updatePlayback();
+      this.loading = false;
+    },
+    async play() {
+      this.loading = true;
+      await this.service.play();
+
+      // Play to device is asynchronous
+      // Wait for a little and hopefully things are in sync
+      await new Promise((resolve) => {
+        setTimeout(() => resolve(), 300);
+      });
+      await this.updatePlayback();
+      this.loading = false;
     },
     async next() {
       this.loading = true;
-      await axios.post("https://api.spotify.com/v1/me/player/next");
+      await this.service.next();
       await this.updatePlayback();
       this.loading = false;
     },
     async seek(progress) {
       this.loading = true;
-      await axios.put(
-        "https://api.spotify.com/v1/me/player/seek",
-        {},
-        {
-          params: { position_ms: progress },
-        }
-      );
+      await this.service.seek(progress);
+      await this.updatePlayback();
+      this.loading = false;
+    },
+    async toggleRepeat() {
+      this.loading = true;
+      await this.service.repeat(!this.track.repeat);
       await this.updatePlayback();
       this.loading = false;
     },
@@ -169,53 +189,7 @@ export default {
       }
     },
     async updatePlayback() {
-      // const requestedAt = new Date();
-      const response = await axios.get("https://api.spotify.com/v1/me/player");
-
-      // issue: https://github.com/spotify/web-api/issues/1073
-      // Best approximation is to get the time that the request took and divide it by 2
-      // before subtracting it from the current time for the timestamp
-      let timestamp = new Date() - this.latency;
-      //   timespan = requestComplete - requestedAt;
-      // let timestamp = new Date(requestComplete - timespan / 2);
-
-      // If the difference between the timestamp & the current time is less than a second, it is probably an accurate latency
-      const latency = timestamp - response.data.timestamp;
-      if (latency < 1000) {
-        this.latency = latency;
-        timestamp = response.data.timestamp;
-      }
-
-      // Update the track analysis if we don't have it already, or if the track is new
-      let analysis;
-      if (response.data.item) {
-        if (!this.track || response.data.item?.uri !== this.track.id) {
-          const analysisResponse = await axios.get(
-            `https://api.spotify.com/v1/audio-analysis/${response.data.item.id}`
-          );
-          analysis = analysisResponse.data;
-        } else {
-          analysis = this.track?.analysis;
-        }
-      }
-      let track = {
-        analysis,
-        timestamp,
-        progress: response.data.progress_ms,
-        paused: !response.data.is_playing,
-      };
-
-      if (response.data.item) {
-        Object.assign(track, {
-          id: response.data.item.uri,
-          name: response.data.item.name,
-          artist: response.data.item.artists.map((m) => m.name).join(", "),
-          album: response.data.item.album.name,
-          images: response.data.item.album.images,
-          duration: response.data.item.duration_ms,
-        });
-      }
-
+      const track = await this.service.info();
       this.$store.commit(Mutations.TRACK, track);
     },
   },
