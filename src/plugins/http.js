@@ -15,8 +15,7 @@ axios.interceptors.response.use(
     async err => {
         if (err.response && err.response.status === 401) {
             const refresh_token = Cookie.get('refresh_token');
-            console.log('refresh:', refresh_token);
-            if (refresh_token) {
+            if (refresh_token !== 'undefined') {
                 const response = await axios.post('/api/token/refresh', {
                     refresh_token
                 });

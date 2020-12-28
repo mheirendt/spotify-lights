@@ -96,6 +96,10 @@ app.post("/token/refresh", function (req, res) {
 
     // requesting access token from refresh token
     const { refresh_token } = req.body;
+    if (!refresh_token) {
+        res.status(400).send({ message: "Bad Request: No refresh token" });
+        return;
+    }
     const authOptions = {
         url: "https://accounts.spotify.com/api/token",
         headers: { "Authorization": "Basic " + (Buffer.from(client_id + ":" + client_secret).toString("base64")) },

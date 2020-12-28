@@ -1,7 +1,9 @@
 <template>
   <v-slider
+    class="d-flex align-center"
     v-bind="$attrs"
     dense
+    hide-details
     :max="duration"
     :min="0"
     :value="value"
